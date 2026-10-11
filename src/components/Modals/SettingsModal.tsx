@@ -146,6 +146,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             />
           </div>
 
+          {/* Scramble Net Position */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <strong>큐브 전개도 위치 (Cube Net Position)</strong>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                3x3x3 큐브 전개도 창의 위치 (창을 마우스로 직접 드래그할 수도 있습니다)
+              </div>
+            </div>
+            <select
+              value={settings.scrambleNetPosition || 'bottom-right'}
+              onChange={(e) => handleChange('scrambleNetPosition', e.target.value as any)}
+              style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="bottom-right">우측 하단 (기본값)</option>
+              <option value="bottom-left">좌측 하단</option>
+              <option value="top-right">우측 상단</option>
+              <option value="top-left">좌측 상단</option>
+              <option value="custom">직접 지정한 위치</option>
+            </select>
+          </div>
+
           {/* Language */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>

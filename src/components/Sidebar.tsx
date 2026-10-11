@@ -34,7 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     });
   }, [session.solves]);
 
-  // Reverse list so latest solve is at the top (matching in Timer)
+  // Reverse list so latest solve is at the top (matching in Cube Timer)
   const reversedSolves = useMemo(() => {
     return [...solvesWithAverages].reverse();
   }, [solvesWithAverages]);
@@ -139,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <table className="solve-list-table">
           <thead>
             <tr>
-              <th style={{ width: '22px' }}>⌕</th>
+              <th>⌕</th>
               <th>시간</th>
               <th>ao5</th>
               <th>ao12</th>

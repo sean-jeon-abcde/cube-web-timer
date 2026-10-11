@@ -53,6 +53,8 @@ export interface SessionStats {
   mean: number | null;
 }
 
+export type ScrambleNetPosition = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'custom';
+
 export interface TimerSettings {
   holdTimeMs: number; // default 300ms
   inspection: boolean; // WCA inspection countdown (15s)
@@ -64,4 +66,6 @@ export interface TimerSettings {
   theme: 'pastel-green' | 'solarized-dark' | 'classic-white' | 'black';
   language: 'ko' | 'en';
   timerSize: number; // rem size multiplier
+  scrambleNetPosition?: ScrambleNetPosition;
 }
+

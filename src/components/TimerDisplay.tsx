@@ -11,6 +11,7 @@ interface TimerDisplayProps {
   diffMs: number | null;
   currentAo5: number | null;
   currentAo12: number | null;
+  currentAo25: number | null;
   settings: TimerSettings;
   onSolveComplete: (timeMs: number, penalty: 'NONE' | '+2' | 'DNF') => void;
   hideAllElements: boolean;
@@ -23,6 +24,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
   diffMs,
   currentAo5,
   currentAo12,
+  currentAo25,
   settings,
   onSolveComplete,
   setHideAllElements
@@ -44,8 +46,8 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
 
   // Sync displayTime when lastSolveTime changes (e.g. on initial load or undo)
   useEffect(() => {
-    if (stateRef.current === 'IDLE' && lastSolveTime !== null) {
-      setDisplayTime(lastSolveTime);
+    if (stateRef.current === 'IDLE') {
+      setDisplayTime(lastSolveTime ?? 0);
     }
   }, [lastSolveTime]);
 
@@ -286,6 +288,9 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
           </div>
           <div className="avg-label-line">
             ao12: {formatTime(currentAo12)}
+          </div>
+          <div className="avg-label-line">
+            ao25: {formatTime(currentAo25)}
           </div>
         </div>
       )}

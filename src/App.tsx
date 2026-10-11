@@ -123,6 +123,10 @@ export const App: React.FC = () => {
     setScrambleIndex(prev => prev + 1);
   }, [currentSessionId]);
 
+  // Best Score banner state
+  const [showBestScore, setShowBestScore] = useState<boolean>(false);
+  const bestScoreTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Solve completed
   const handleSolveComplete = useCallback((timeMs: number, penalty: Penalty) => {
     const newSolveIndex = currentSession.solves.length + 1;
@@ -134,6 +138,19 @@ export const App: React.FC = () => {
       scramble: currentScramble,
       date: Date.now()
     };
+
+    // Check if it's a new personal best single (only for non-DNF solves)
+    if (penalty !== 'DNF') {
+      const effectiveTime = penalty === '+2' ? timeMs + 2000 : timeMs;
+      const currentBest = stats.single.best;
+      if (currentBest === null || effectiveTime < currentBest) {
+        setShowBestScore(true);
+        if (bestScoreTimerRef.current) clearTimeout(bestScoreTimerRef.current);
+        bestScoreTimerRef.current = setTimeout(() => {
+          setShowBestScore(false);
+        }, 3000);
+      }
+    }
 
     setSessions(prev =>
       prev.map(s => {
@@ -149,7 +166,7 @@ export const App: React.FC = () => {
 
     // Auto generate next scramble
     handleNextScramble();
-  }, [currentSession.id, currentSession.solves.length, currentScramble, handleNextScramble]);
+  }, [currentSession.id, currentSession.solves.length, currentScramble, handleNextScramble, stats.single.best]);
 
   // Update a single solve
   const handleUpdateSolve = useCallback((updated: Solve) => {
@@ -283,6 +300,13 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-container">
+      {/* Best Score Banner */}
+      {showBestScore && (
+        <div className="best-score-banner" onClick={() => setShowBestScore(false)}>
+          🏆 Best Score!
+        </div>
+      )}
+
       {/* Top Section: Left Toolbar & Top Scramble Bar */}
       {!hideAllElements && (
         <div className="top-section">
@@ -338,6 +362,7 @@ export const App: React.FC = () => {
           diffMs={diffMs}
           currentAo5={stats.ao5.current}
           currentAo12={stats.ao12.current}
+          currentAo25={stats.ao25.current}
           settings={settings}
           onSolveComplete={handleSolveComplete}
           hideAllElements={hideAllElements}
@@ -349,6 +374,11 @@ export const App: React.FC = () => {
           <CubeNetView
             scramble={currentScramble}
             onClose={() => setIsVisualizerActive(false)}
+            positionSetting={settings.scrambleNetPosition}
+            onUpdatePositionSetting={(pos) =>
+              setSettings(prev => ({ ...prev, scrambleNetPosition: pos }))
+            }
+            isSidebarActive={isSidebarActive}
           />
         )}
       </div>

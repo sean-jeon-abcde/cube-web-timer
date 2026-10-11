@@ -1,7 +1,7 @@
 @charset "UTF-8";
 
 :root {
-  --bg-main: #effbe4;
+  --bg-main: #87ceeb;
   --panel-bg: #fde7e7;
   --panel-border: #f5cfcf;
   --button-bg: #edfbe2;
@@ -126,7 +126,7 @@ html, body {
 .cstimer-logo-text {
   font-family: Impact, "Arial Black", sans-serif;
   color: #ffeb3b;
-  font-size: 32px;
+  font-size: 27px;
   letter-spacing: -0.5px;
   text-shadow: 0 0 1px #ffeb3b;
   white-space: nowrap;
@@ -224,15 +224,15 @@ html, body {
 
 /* Left Sidebar (Session & Solves) */
 .sidebar-panel {
-  width: 172px;
+  width: 180px;
   background-color: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
-  padding: 6px 8px;
+  padding: 8px 10px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  font-size: 13px;
+  font-size: 13.5px;
   height: calc(100vh - 128px);
   z-index: 5;
 }
@@ -293,14 +293,14 @@ html, body {
 .stats-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 16px;
   margin-bottom: 6px;
 }
 
 .stats-table th {
   text-align: right;
   font-weight: bold;
-  padding: 1px 4px;
+  padding: 2px 6px;
   color: #111;
 }
 
@@ -309,7 +309,7 @@ html, body {
 }
 
 .stats-table td {
-  padding: 1px 4px;
+  padding: 2px 6px;
   text-align: right;
 }
 
@@ -335,10 +335,10 @@ html, body {
 
 .session-summary-box {
   background-color: #fce4e4;
-  padding: 4px 6px;
+  padding: 5px 8px;
   border-radius: 4px;
   margin-bottom: 6px;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .summary-line {
@@ -351,45 +351,57 @@ html, body {
 .solve-list-container {
   flex: 1;
   overflow-y: auto;
-  border-top: 1px solid #eababa;
-  padding-top: 4px;
+  border-top: 1px solid #ffffff;
+  padding-top: 2px;
 }
 
 .solve-list-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 18px;
+  font-family: Arial, "Helvetica Neue", Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
 }
 
 .solve-list-table th {
-  padding: 2px 2px;
-  text-align: right;
-  font-weight: normal;
-  color: #333;
-  border-bottom: 1px solid #f0bcbc;
+  padding: 4px 2px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 13.5px;
+  color: #222;
+  border: 1px solid #ffffff;
+  background-color: #fce1e1;
 }
 
 .solve-list-table th:first-child {
   text-align: center;
   color: var(--link-blue);
+  width: 18%;
 }
 
 .solve-list-table td {
-  padding: 2px 2px;
-  text-align: right;
+  padding: 5px 4px;
+  text-align: center;
   white-space: nowrap;
+  border: 1px solid #ffffff;
+  background-color: var(--panel-bg);
+  font-size: 18px;
+  color: #111;
+  font-weight: 400;
 }
 
 .solve-list-table td:first-child {
   text-align: center;
-  color: #333;
+  color: #111;
 }
 
 .solve-row {
   cursor: pointer;
+  height: 34px;
 }
 
-.solve-row:hover {
+.solve-row:hover td {
   background-color: #f7d2d2;
 }
 
@@ -593,4 +605,37 @@ html, body {
 .solve-list-container::-webkit-scrollbar-track,
 .modal-body::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Best Score Banner */
+@keyframes bestScoreFadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes bestScoreFadeOut {
+  0%   { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.best-score-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  background: rgba(22, 163, 74, 0.92);
+  color: #ffffff;
+  font-size: 4rem;
+  font-weight: bold;
+  padding: 0.6em 1.2em;
+  border-radius: 1rem;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  animation:
+    bestScoreFadeIn 0.35s ease forwards,
+    bestScoreFadeOut 3s ease forwards;
 }

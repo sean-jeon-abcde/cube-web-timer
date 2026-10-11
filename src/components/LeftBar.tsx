@@ -61,16 +61,16 @@ export const LeftBar: React.FC<LeftBarProps> = ({
         </button>
       </div>
 
-      {/* in Timer Logo */}
+      {/* in Cube Timer Logo */}
       <button
         className="cstimer-logo-btn"
         onClick={() => {
           window.location.reload();
         }}
-        title="in Timer"
-        aria-label="in Timer logo"
+        title="in Cube Timer"
+        aria-label="in Cube Timer logo"
       >
-        <span className="cstimer-logo-text">in Timer</span>
+        <span className="cstimer-logo-text">in Cube Timer</span>
       </button>
 
       {/* Bottom 3 Buttons */}

@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Session } from '../../types';
-import { X, Download, FileSpreadsheet, RotateCcw } from 'lucide-react';
+import { X, Download, FileSpreadsheet, RotateCcw, HardDrive, CheckCircle } from 'lucide-react';
 import { formatTime } from '../../utils/formatTime';
+import { syncSessionsToFile } from '../../utils/storage';
 
 interface ExportModalProps {
   sessions: Session[];
@@ -17,12 +18,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   onClose
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
   const exportToJson = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(sessions, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `intimer_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute('download', `incubetimer_backup_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -40,7 +42,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `intimer_solves_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `incubetimer_solves_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -81,17 +83,68 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <p style={{ color: '#444' }}>
-            in Timer 기록을 안전하게 파일로 백업하거나, 이전 백업 파일을 복구할 수 있습니다.
+            in Cube Timer 기록을 안전하게 파일로 백업하거나, 이전 백업 파일을 복구할 수 있습니다.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Local file direct save */}
             <button
               className="btn-primary"
+              onClick={async () => {
+                const ok = await syncSessionsToFile(sessions);
+                if (ok) {
+                  setSaveStatus('프로젝트 records/ 폴더에 solves.json 및 solves.csv 파일로 저장이 완료되었습니다!');
+                } else {
+                  // Fallback: download as json
+                  exportToJson();
+                  setSaveStatus('로컬 파일로 다운로드되었습니다.');
+                }
+                setTimeout(() => setSaveStatus(null), 4000);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '12px',
+                backgroundColor: '#059669',
+                color: '#fff',
+                fontWeight: 'bold',
+                borderRadius: '6px'
+              }}
+            >
+              <HardDrive size={18} />
+              <span>로컬 파일로 지금 저장 (records/ 디렉토리)</span>
+            </button>
+
+            {saveStatus && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                backgroundColor: '#ecfdf5',
+                color: '#065f46',
+                border: '1px solid #a7f3d0',
+                borderRadius: '4px',
+                fontSize: '13px'
+              }}>
+                <CheckCircle size={16} />
+                <span>{saveStatus}</span>
+              </div>
+            )}
+
+            <div style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0' }}>
+              💡 타이머에서 솔브를 잴 때마다 프로젝트 내 <code>records/solves.json</code> 및 <code>records/solves.csv</code> 파일에 자동으로 실시간 저장됩니다.
+            </div>
+
+            <button
+              className="btn-secondary"
               onClick={exportToJson}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px' }}
             >
               <Download size={18} />
-              <span>JSON 파일로 내보내기 (전체 백업)</span>
+              <span>JSON 파일로 다운로드 (전체 백업)</span>
             </button>
 
             <button
@@ -100,7 +153,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px' }}
             >
               <FileSpreadsheet size={18} />
-              <span>CSV 파일로 내보내기 (엑셀용)</span>
+              <span>CSV 파일로 다운로드 (엑셀용)</span>
             </button>
 
             <input
