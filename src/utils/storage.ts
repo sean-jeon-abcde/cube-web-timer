@@ -1,8 +1,8 @@
 import { Session, TimerSettings } from '../types';
 
-const SESSIONS_KEY = 'incubetimer_sessions_v1';
-const CURRENT_SESSION_ID_KEY = 'incubetimer_current_session_id_v1';
-const SETTINGS_KEY = 'incubetimer_settings_v1';
+const SESSIONS_KEY = 'baseballtimer_sessions_v1';
+const CURRENT_SESSION_ID_KEY = 'baseballtimer_current_session_id_v1';
+const SETTINGS_KEY = 'baseballtimer_settings_v1';
 const LEGACY_SETTINGS_KEY = 'cstimer_settings_v1';
 const LEGACY_KEYS = [
   'intimer_sessions_v1',
@@ -22,7 +22,9 @@ export const DEFAULT_SETTINGS: TimerSettings = {
   theme: 'pastel-green',
   language: 'ko',
   timerSize: 1.0,
-  scrambleNetPosition: 'bottom-right'
+  scrambleNetPosition: 'bottom-right',
+  statsPosition: 'top-left',
+  showFloatingStats: true
 };
 
 export function createInitialSession(): Session {
@@ -42,7 +44,7 @@ export function loadSessions(): Session[] {
   } catch {}
 
   try {
-    const raw = localStorage.getItem(SESSIONS_KEY) || localStorage.getItem('intimer_sessions_v2');
+    const raw = localStorage.getItem(SESSIONS_KEY) || localStorage.getItem('incubetimer_sessions_v1') || localStorage.getItem('intimer_sessions_v2');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -83,7 +85,7 @@ export function saveSessions(sessions: Session[]) {
 
 export function loadCurrentSessionId(): string {
   try {
-    const id = localStorage.getItem(CURRENT_SESSION_ID_KEY) || localStorage.getItem('intimer_current_session_id_v2');
+    const id = localStorage.getItem(CURRENT_SESSION_ID_KEY) || localStorage.getItem('incubetimer_current_session_id_v1') || localStorage.getItem('intimer_current_session_id_v2');
     if (id) return id;
   } catch {}
   return 'session-1';
@@ -97,7 +99,7 @@ export function saveCurrentSessionId(id: string) {
 
 export function loadSettings(): TimerSettings {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY) || localStorage.getItem('intimer_settings_v1') || localStorage.getItem(LEGACY_SETTINGS_KEY);
+    const raw = localStorage.getItem(SETTINGS_KEY) || localStorage.getItem('incubetimer_settings_v1') || localStorage.getItem('intimer_settings_v1') || localStorage.getItem(LEGACY_SETTINGS_KEY);
     if (raw) {
       return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
     }

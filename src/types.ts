@@ -54,6 +54,7 @@ export interface SessionStats {
 }
 
 export type ScrambleNetPosition = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'custom';
+export type StatsPosition = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'custom';
 
 export interface TimerSettings {
   holdTimeMs: number; // default 300ms
@@ -67,5 +68,7 @@ export interface TimerSettings {
   language: 'ko' | 'en';
   timerSize: number; // rem size multiplier
   scrambleNetPosition?: ScrambleNetPosition;
+  statsPosition?: StatsPosition;
+  showFloatingStats?: boolean;
 }
 

@@ -39,7 +39,7 @@ function localRecordSyncPlugin(): Plugin {
               fs.writeFileSync(csvPath, csv, 'utf-8');
 
               // 3. Save Human-readable Summary TXT
-              let summaryTxt = `=== in Cube Timer 기록 요약 (저장일시: ${new Date().toLocaleString()}) ===\n\n`;
+              let summaryTxt = `=== Baseball Timer 기록 요약 (저장일시: ${new Date().toLocaleString()}) ===\n\n`;
               sessions.forEach((sess: any) => {
                 const total = sess.solves.length;
                 const completed = sess.solves.filter((s: any) => s.penalty !== 'DNF').length;

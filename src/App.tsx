@@ -20,6 +20,7 @@ import { LeftBar } from './components/LeftBar';
 import { Sidebar } from './components/Sidebar';
 import { TimerDisplay } from './components/TimerDisplay';
 import { CubeNetView } from './components/CubeNetView';
+import { StatsFloatingView } from './components/StatsFloatingView';
 import { SettingsModal } from './components/Modals/SettingsModal';
 import { ExportModal } from './components/Modals/ExportModal';
 import { StatsModal } from './components/Modals/StatsModal';
@@ -42,6 +43,10 @@ export const App: React.FC = () => {
   // Active view toggles
   const [isVisualizerActive, setIsVisualizerActive] = useState<boolean>(true);
   const [isSidebarActive, setIsSidebarActive] = useState<boolean>(true);
+  const [isStatsActive, setIsStatsActive] = useState<boolean>(() => {
+    const saved = localStorage.getItem('incubetimer_show_floating_stats');
+    return saved !== null ? saved === 'true' : true;
+  });
   const [hideAllElements, setHideAllElements] = useState<boolean>(false);
 
   // Modals
@@ -318,10 +323,14 @@ export const App: React.FC = () => {
               isVisualizerActive={isVisualizerActive}
               onToggleSidebar={() => setIsSidebarActive(prev => !prev)}
               isSidebarActive={isSidebarActive}
-              onOpenStats={() => {
-                setSelectedStatName(undefined);
-                setShowStats(true);
+              onToggleStats={() => {
+                setIsStatsActive(prev => {
+                  const next = !prev;
+                  localStorage.setItem('incubetimer_show_floating_stats', String(next));
+                  return next;
+                });
               }}
+              isStatsActive={isStatsActive}
               onOpenTools={() => setShowTools(true)}
             />
           </div>
@@ -377,6 +386,31 @@ export const App: React.FC = () => {
             positionSetting={settings.scrambleNetPosition}
             onUpdatePositionSetting={(pos) =>
               setSettings(prev => ({ ...prev, scrambleNetPosition: pos }))
+            }
+            isSidebarActive={isSidebarActive}
+          />
+        )}
+
+        {/* Floating Stats Summary Table on Desktop / Background */}
+        {!hideAllElements && isStatsActive && (
+          <StatsFloatingView
+            session={currentSession}
+            stats={stats}
+            onClose={() => {
+              setIsStatsActive(false);
+              localStorage.setItem('incubetimer_show_floating_stats', 'false');
+            }}
+            onStatClick={(statName) => {
+              setSelectedStatName(statName);
+              setShowStats(true);
+            }}
+            onOpenStatsModal={() => {
+              setSelectedStatName(undefined);
+              setShowStats(true);
+            }}
+            positionSetting={settings.statsPosition || 'top-left'}
+            onUpdatePositionSetting={(pos) =>
+              setSettings(prev => ({ ...prev, statsPosition: pos }))
             }
             isSidebarActive={isSidebarActive}
           />

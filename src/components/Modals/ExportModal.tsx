@@ -24,7 +24,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(sessions, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `incubetimer_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute('download', `baseballtimer_backup_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -42,7 +42,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `incubetimer_solves_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `baseballtimer_solves_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -83,7 +83,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <p style={{ color: '#444' }}>
-            in Cube Timer 기록을 안전하게 파일로 백업하거나, 이전 백업 파일을 복구할 수 있습니다.
+            Baseball Timer 기록을 안전하게 파일로 백업하거나, 이전 백업 파일을 복구할 수 있습니다.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

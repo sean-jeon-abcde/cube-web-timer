@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { getCubeStateFromScramble, CubeState } from '../utils/cubeSimulator';
+import { Cube3DView } from './Cube3DView';
 import { X, GripHorizontal, RotateCcw, LayoutGrid } from 'lucide-react';
 import { ScrambleNetPosition } from '../types';
 
@@ -11,7 +12,10 @@ interface CubeNetViewProps {
   isSidebarActive?: boolean;
 }
 
-const STORAGE_COORDS_KEY = 'incubetimer_scramble_net_coords';
+const STORAGE_COORDS_KEY = 'baseballtimer_scramble_net_coords';
+const STORAGE_VIEW_MODE_KEY = 'baseballtimer_cube_view_mode';
+
+export type VisualizerMode = 'both' | '3d' | 'net';
 
 export const CubeNetView: React.FC<CubeNetViewProps> = ({
   scramble,
@@ -24,10 +28,28 @@ export const CubeNetView: React.FC<CubeNetViewProps> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [showPosMenu, setShowPosMenu] = useState<boolean>(false);
 
+  // View mode: 'both' (3D + 2D Net), '3d' (Only 3D), 'net' (Only 2D Net)
+  const [viewMode, setViewMode] = useState<VisualizerMode>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_VIEW_MODE_KEY);
+      if (saved === 'both' || saved === '3d' || saved === 'net') {
+        return saved;
+      }
+    } catch {}
+    return 'both';
+  });
+
+  const handleSetViewMode = (mode: VisualizerMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem(STORAGE_VIEW_MODE_KEY, mode);
+    } catch {}
+  };
+
   // Custom coordinates for freely dragged position
   const [customCoords, setCustomCoords] = useState<{ x: number; y: number } | null>(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_COORDS_KEY) || localStorage.getItem('intimer_scramble_net_coords');
+      const raw = localStorage.getItem(STORAGE_COORDS_KEY) || localStorage.getItem('incubetimer_scramble_net_coords') || localStorage.getItem('intimer_scramble_net_coords');
       if (raw) {
         const parsed = JSON.parse(raw);
         if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
@@ -155,7 +177,7 @@ export const CubeNetView: React.FC<CubeNetViewProps> = ({
       backgroundColor: '#fde7e7',
       border: '1px solid #f5cfcf',
       borderRadius: '8px',
-      padding: '10px 14px',
+      padding: '8px 12px',
       boxShadow: isDragging
         ? '0 10px 30px rgba(0,0,0,0.28)'
         : '0 4px 15px rgba(0,0,0,0.15)',
@@ -163,7 +185,7 @@ export const CubeNetView: React.FC<CubeNetViewProps> = ({
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '6px',
+      gap: '4px',
       userSelect: isDragging ? 'none' : 'auto',
       transition: isDragging ? 'none' : 'box-shadow 0.2s ease, opacity 0.2s ease',
       opacity: isDragging ? 0.93 : 1
@@ -181,7 +203,7 @@ export const CubeNetView: React.FC<CubeNetViewProps> = ({
       };
     }
 
-    const leftSidebarOffset = isSidebarActive ? '194px' : '20px';
+    const leftSidebarOffset = isSidebarActive ? '278px' : '20px';
     switch (positionSetting) {
       case 'bottom-left':
         return { ...baseStyle, bottom: '20px', left: leftSidebarOffset };
@@ -200,12 +222,12 @@ export const CubeNetView: React.FC<CubeNetViewProps> = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 14px)',
-          gridTemplateRows: 'repeat(3, 14px)',
-          gap: '2px',
+          gridTemplateColumns: 'repeat(3, 12.5px)',
+          gridTemplateRows: 'repeat(3, 12.5px)',
+          gap: '1.5px',
           backgroundColor: '#222',
           padding: '2px',
-          borderRadius: '4px'
+          borderRadius: '3px'
         }}
         title={`Face ${label}`}
       >
@@ -213,8 +235,8 @@ export const CubeNetView: React.FC<CubeNetViewProps> = ({
           <div
             key={idx}
             style={{
-              width: '14px',
-              height: '14px',
+              width: '12.5px',
+              height: '12.5px',
               backgroundColor: color,
               borderRadius: '2px',
               border: '0.5px solid rgba(0,0,0,0.2)'
@@ -380,42 +402,134 @@ export const CubeNetView: React.FC<CubeNetViewProps> = ({
         </div>
       </div>
 
-      {/* 2D Unfolded Cube Net */}
+      {/* View Mode Tab Switcher */}
       <div
+        className="no-drag"
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, auto)',
-          gridTemplateRows: 'repeat(3, auto)',
-          gap: '4px',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginTop: '4px'
+          display: 'flex',
+          backgroundColor: 'rgba(0,0,0,0.06)',
+          borderRadius: '5px',
+          padding: '2px',
+          width: '100%',
+          justifyContent: 'space-between',
+          gap: '2px',
+          boxSizing: 'border-box'
         }}
       >
-        {/* Row 0: Top face U */}
-        <div style={{ gridColumn: 2, gridRow: 1 }}>
-          {renderFace(cubeState.U, 'U')}
-        </div>
-
-        {/* Row 1: Left L, Front F, Right R, Back B */}
-        <div style={{ gridColumn: 1, gridRow: 2 }}>
-          {renderFace(cubeState.L, 'L')}
-        </div>
-        <div style={{ gridColumn: 2, gridRow: 2 }}>
-          {renderFace(cubeState.F, 'F')}
-        </div>
-        <div style={{ gridColumn: 3, gridRow: 2 }}>
-          {renderFace(cubeState.R, 'R')}
-        </div>
-        <div style={{ gridColumn: 4, gridRow: 2 }}>
-          {renderFace(cubeState.B, 'B')}
-        </div>
-
-        {/* Row 2: Bottom face D */}
-        <div style={{ gridColumn: 2, gridRow: 3 }}>
-          {renderFace(cubeState.D, 'D')}
-        </div>
+        <button
+          onClick={() => handleSetViewMode('both')}
+          style={{
+            flex: 1,
+            padding: '2.5px 0',
+            fontSize: '10px',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            backgroundColor: viewMode === 'both' ? '#ffffff' : 'transparent',
+            color: viewMode === 'both' ? '#111' : '#666',
+            fontWeight: viewMode === 'both' ? '600' : 'normal',
+            boxShadow: viewMode === 'both' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s'
+          }}
+          title="3D 입체 큐브와 전개도를 함께 표시"
+        >
+          3D + 전개도
+        </button>
+        <button
+          onClick={() => handleSetViewMode('3d')}
+          style={{
+            flex: 1,
+            padding: '2.5px 0',
+            fontSize: '10px',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            backgroundColor: viewMode === '3d' ? '#ffffff' : 'transparent',
+            color: viewMode === '3d' ? '#111' : '#666',
+            fontWeight: viewMode === '3d' ? '600' : 'normal',
+            boxShadow: viewMode === '3d' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s'
+          }}
+          title="3D 입체 큐브만 표시"
+        >
+          3D 입체
+        </button>
+        <button
+          onClick={() => handleSetViewMode('net')}
+          style={{
+            flex: 1,
+            padding: '2.5px 0',
+            fontSize: '10px',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            backgroundColor: viewMode === 'net' ? '#ffffff' : 'transparent',
+            color: viewMode === 'net' ? '#111' : '#666',
+            fontWeight: viewMode === 'net' ? '600' : 'normal',
+            boxShadow: viewMode === 'net' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s'
+          }}
+          title="2D 전개도만 표시"
+        >
+          전개도
+        </button>
       </div>
+
+      {/* 3D Scramble Cube (Above the 2D Net) */}
+      {(viewMode === 'both' || viewMode === '3d') && (
+        <Cube3DView cubeState={cubeState} size={56} />
+      )}
+
+      {/* Divider when both are displayed */}
+      {viewMode === 'both' && (
+        <div
+          style={{
+            width: '100%',
+            height: '1px',
+            backgroundColor: 'rgba(0,0,0,0.07)',
+            margin: '1px 0'
+          }}
+        />
+      )}
+
+      {/* 2D Unfolded Cube Net */}
+      {(viewMode === 'both' || viewMode === 'net') && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, auto)',
+            gridTemplateRows: 'repeat(3, auto)',
+            gap: '3px',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: '2px'
+          }}
+        >
+          {/* Row 0: Top face U */}
+          <div style={{ gridColumn: 2, gridRow: 1 }}>
+            {renderFace(cubeState.U, 'U')}
+          </div>
+
+          {/* Row 1: Left L, Front F, Right R, Back B */}
+          <div style={{ gridColumn: 1, gridRow: 2 }}>
+            {renderFace(cubeState.L, 'L')}
+          </div>
+          <div style={{ gridColumn: 2, gridRow: 2 }}>
+            {renderFace(cubeState.F, 'F')}
+          </div>
+          <div style={{ gridColumn: 3, gridRow: 2 }}>
+            {renderFace(cubeState.R, 'R')}
+          </div>
+          <div style={{ gridColumn: 4, gridRow: 2 }}>
+            {renderFace(cubeState.B, 'B')}
+          </div>
+
+          {/* Row 2: Bottom face D */}
+          <div style={{ gridColumn: 2, gridRow: 3 }}>
+            {renderFace(cubeState.D, 'D')}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

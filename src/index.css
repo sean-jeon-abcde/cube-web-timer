@@ -9,10 +9,10 @@
   --link-blue: #0000ee;
   --text-main: #000000;
   --timer-ready: #16a34a;
-  --timer-hold: #dc2626;
+  --timer-hold: #ffa500; /* changed from red to orange per user request */
   --timer-inspect: #ea580c;
   --diff-plus: #dc2626;
-  --diff-minus: #16a34a;
+  --diff-minus: #7b2cbf; /* changed from green to purple per user request */
 }
 
 * {
@@ -70,18 +70,22 @@ html, body {
 .leftbar {
   display: flex;
   flex-direction: column;
-  width: 154px;
+  width: calc(154px + 3.4cm);
+  height: calc(144px + 3cm);
+  gap: 8px;
 }
 
 .icon-row {
   display: flex;
   justify-content: space-between;
-  gap: 4px;
+  gap: 6px;
+  width: 100%;
+  flex: 1;
 }
 
 .cstimer-btn {
-  width: 48px;
-  height: 44px;
+  flex: 1;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,9 +114,9 @@ html, body {
 }
 
 .cstimer-logo-btn {
-  width: 152px;
-  height: 48px;
-  margin: 4px 0;
+  width: 100%;
+  flex: 1.2;
+  margin: 0;
   background-color: #000000;
   border-radius: 4px;
   display: flex;
@@ -126,7 +130,7 @@ html, body {
 .cstimer-logo-text {
   font-family: Impact, "Arial Black", sans-serif;
   color: #ffeb3b;
-  font-size: 27px;
+  font-size: 30px;
   letter-spacing: -0.5px;
   text-shadow: 0 0 1px #ffeb3b;
   white-space: nowrap;
@@ -224,7 +228,7 @@ html, body {
 
 /* Left Sidebar (Session & Solves) */
 .sidebar-panel {
-  width: 180px;
+  width: calc(198px * 1.3);
   background-color: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: 6px;
@@ -233,7 +237,9 @@ html, body {
   padding: 8px 10px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   font-size: 13.5px;
-  height: calc(100vh - 128px);
+  height: calc(100vh - 128px - 3cm);
+  align-self: flex-end;
+  margin-top: auto;
   z-index: 5;
 }
 
@@ -242,7 +248,7 @@ html, body {
   align-items: center;
   gap: 6px;
   font-weight: bold;
-  font-size: 13px;
+  font-size: 15px;
   margin-bottom: 6px;
   padding-bottom: 4px;
 }
@@ -253,32 +259,32 @@ html, body {
   cursor: pointer;
   background: none;
   border: none;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: bold;
 }
 
 .session-input {
-  width: 32px;
-  height: 20px;
+  width: 36px;
+  height: 24px;
   text-align: center;
   border: 1px solid #999;
-  border-radius: 2px;
+  border-radius: 3px;
   background: #fff;
-  font-size: 12px;
+  font-size: 15px;
   outline: none;
 }
 
 .session-del-btn {
   background: #fff;
   border: 1px solid #aaa;
-  border-radius: 2px;
-  width: 20px;
-  height: 20px;
+  border-radius: 3px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: bold;
   color: #555;
   transition: all 0.1s;
@@ -338,7 +344,7 @@ html, body {
   padding: 5px 8px;
   border-radius: 4px;
   margin-bottom: 6px;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .summary-line {

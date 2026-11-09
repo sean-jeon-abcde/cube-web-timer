@@ -15,7 +15,8 @@ interface LeftBarProps {
   isVisualizerActive: boolean;
   onToggleSidebar: () => void;
   isSidebarActive: boolean;
-  onOpenStats: () => void;
+  onToggleStats: () => void;
+  isStatsActive: boolean;
   onOpenTools: () => void;
 }
 
@@ -26,7 +27,8 @@ export const LeftBar: React.FC<LeftBarProps> = ({
   isVisualizerActive,
   onToggleSidebar,
   isSidebarActive,
-  onOpenStats,
+  onToggleStats,
+  isStatsActive,
   onOpenTools
 }) => {
   return (
@@ -39,7 +41,7 @@ export const LeftBar: React.FC<LeftBarProps> = ({
           title="Option / 설정"
           aria-label="Option / 설정"
         >
-          <Settings size={22} strokeWidth={2} />
+          <Settings size={28} strokeWidth={2} />
         </button>
 
         <button
@@ -48,7 +50,7 @@ export const LeftBar: React.FC<LeftBarProps> = ({
           title="Export / 내보내기"
           aria-label="Export / 내보내기"
         >
-          <Upload size={22} strokeWidth={2} />
+          <Upload size={28} strokeWidth={2} />
         </button>
 
         <button
@@ -57,20 +59,20 @@ export const LeftBar: React.FC<LeftBarProps> = ({
           title="Scramble drawing / 큐브 섞기 그림"
           aria-label="Scramble drawing / 큐브 섞기 그림"
         >
-          <Grid3X3 size={22} strokeWidth={2} />
+          <Grid3X3 size={28} strokeWidth={2} />
         </button>
       </div>
 
-      {/* in Cube Timer Logo */}
+      {/* Baseball Timer Logo */}
       <button
         className="cstimer-logo-btn"
         onClick={() => {
           window.location.reload();
         }}
-        title="in Cube Timer"
-        aria-label="in Cube Timer logo"
+        title="Baseball Timer"
+        aria-label="Baseball Timer logo"
       >
-        <span className="cstimer-logo-text">in Cube Timer</span>
+        <span className="cstimer-logo-text">Baseball Timer</span>
       </button>
 
       {/* Bottom 3 Buttons */}
@@ -81,16 +83,16 @@ export const LeftBar: React.FC<LeftBarProps> = ({
           title="List times / 기록 목록"
           aria-label="List times / 기록 목록"
         >
-          <ListOrdered size={22} strokeWidth={2} />
+          <ListOrdered size={28} strokeWidth={2} />
         </button>
 
         <button
-          className="cstimer-btn"
-          onClick={onOpenStats}
-          title="Statistics / 통계 세부"
-          aria-label="Statistics / 통계 세부"
+          className={`cstimer-btn ${isStatsActive ? 'active-pink' : ''}`}
+          onClick={onToggleStats}
+          title="Statistics / 바탕화면 통계 요약 (토글)"
+          aria-label="Statistics / 바탕화면 통계 요약"
         >
-          <JapaneseYen size={22} strokeWidth={2.2} />
+          <JapaneseYen size={28} strokeWidth={2.2} />
         </button>
 
         <button
@@ -99,7 +101,7 @@ export const LeftBar: React.FC<LeftBarProps> = ({
           title="Tools / 도구 (Cross Solver, Scramble Generator)"
           aria-label="Tools / 도구"
         >
-          <SlidersHorizontal size={22} strokeWidth={2} />
+          <SlidersHorizontal size={28} strokeWidth={2} />
         </button>
       </div>
     </div>
