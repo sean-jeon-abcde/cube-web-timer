@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Session, SessionStats, StatsPosition } from '../types';
 import { formatTime } from '../utils/formatTime';
 import { X, GripHorizontal, RotateCcw, LayoutGrid, Maximize2 } from 'lucide-react';
+import { useDraggablePanel } from '../hooks/useDraggablePanel';
 
 interface StatsFloatingViewProps {
   session: Session;
@@ -14,7 +15,7 @@ interface StatsFloatingViewProps {
   isSidebarActive?: boolean;
 }
 
-const STORAGE_COORDS_KEY = 'incubetimer_stats_coords';
+const STORAGE_COORDS_KEY = 'baseballtimer_stats_coords';
 
 export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
   session,
@@ -26,22 +27,20 @@ export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
   onUpdatePositionSetting,
   isSidebarActive = true
 }) => {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [showPosMenu, setShowPosMenu] = useState<boolean>(false);
 
-  // Custom coordinates for freely dragged position
-  const [customCoords, setCustomCoords] = useState<{ x: number; y: number } | null>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_COORDS_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
-          return parsed;
-        }
-      }
-    } catch {}
-    return null;
+  const {
+    panelRef,
+    isDragging,
+    customCoords,
+    setCustomCoords,
+    handlePointerDown,
+    handleResetPosition: resetPositionBase,
+  } = useDraggablePanel({
+    storageKey: STORAGE_COORDS_KEY,
+    legacyStorageKeys: ['incubetimer_stats_coords'],
+    defaultWidth: 228,
+    defaultHeight: 280,
   });
 
   const statRows: Array<{ label: string; key: keyof SessionStats }> = [
@@ -56,26 +55,6 @@ export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
     { label: 'ao500', key: 'ao500' }
   ];
 
-  // Keep coords within viewport if window is resized
-  useEffect(() => {
-    const handleResize = () => {
-      setCustomCoords(prev => {
-        if (!prev) return prev;
-        const width = panelRef.current ? panelRef.current.offsetWidth : 228;
-        const height = panelRef.current ? panelRef.current.offsetHeight : 280;
-        const maxX = Math.max(8, window.innerWidth - width - 8);
-        const maxY = Math.max(8, window.innerHeight - height - 8);
-        return {
-          x: Math.min(Math.max(8, prev.x), maxX),
-          y: Math.min(Math.max(8, prev.y), maxY)
-        };
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   // Close preset menu on outside click
   useEffect(() => {
     if (!showPosMenu) return;
@@ -88,64 +67,8 @@ export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
     return () => window.removeEventListener('mousedown', handleOutsideClick);
   }, [showPosMenu]);
 
-  // Handle Dragging
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('button, select, input, .stat-link, .no-drag')) {
-      return;
-    }
-    if (!panelRef.current) return;
-
-    e.preventDefault();
-    setIsDragging(true);
-    setShowPosMenu(false);
-
-    const rect = panelRef.current.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-
-    let latestCoords = { x: rect.left, y: rect.top };
-
-    const handlePointerMove = (moveEvt: PointerEvent) => {
-      if (!panelRef.current) return;
-      const width = panelRef.current.offsetWidth;
-      const height = panelRef.current.offsetHeight;
-
-      const rawX = moveEvt.clientX - offsetX;
-      const rawY = moveEvt.clientY - offsetY;
-
-      const maxX = Math.max(8, window.innerWidth - width - 8);
-      const maxY = Math.max(8, window.innerHeight - height - 8);
-
-      const clampedX = Math.min(Math.max(8, rawX), maxX);
-      const clampedY = Math.min(Math.max(8, rawY), maxY);
-
-      latestCoords = { x: clampedX, y: clampedY };
-      setCustomCoords(latestCoords);
-    };
-
-    const handlePointerUp = () => {
-      setIsDragging(false);
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-
-      try {
-        localStorage.setItem(STORAGE_COORDS_KEY, JSON.stringify(latestCoords));
-      } catch {}
-      if (onUpdatePositionSetting) {
-        onUpdatePositionSetting('custom');
-      }
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-  }, [onUpdatePositionSetting]);
-
-  // Reset position
   const handleResetPosition = () => {
-    try {
-      localStorage.removeItem(STORAGE_COORDS_KEY);
-    } catch {}
-    setCustomCoords(null);
+    resetPositionBase();
     if (onUpdatePositionSetting) {
       onUpdatePositionSetting('top-left');
     }
@@ -161,32 +84,12 @@ export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
 
   // Compute position styles
   const getPanelStyle = (): React.CSSProperties => {
-    const baseStyle: React.CSSProperties = {
-      position: 'fixed',
-      backgroundColor: '#fde7e7',
-      border: '1px solid #f5cfcf',
-      borderRadius: '8px',
-      padding: '8px 14px',
-      boxShadow: isDragging
-        ? '0 10px 30px rgba(0,0,0,0.28)'
-        : '0 4px 15px rgba(0,0,0,0.15)',
-      zIndex: 55,
-      display: 'flex',
-      flexDirection: 'column',
-      userSelect: isDragging ? 'none' : 'auto',
-      transition: isDragging ? 'none' : 'box-shadow 0.2s ease, opacity 0.2s ease',
-      opacity: isDragging ? 0.93 : 1,
-      width: '228px',
-      minWidth: '228px'
-    };
-
     if (positionSetting === 'custom' && customCoords) {
       const maxX = Math.max(8, window.innerWidth - 240);
       const maxY = Math.max(8, window.innerHeight - 280);
       const x = Math.min(Math.max(8, customCoords.x), maxX);
       const y = Math.min(Math.max(8, customCoords.y), maxY);
       return {
-        ...baseStyle,
         left: `${x}px`,
         top: `${y}px`
       };
@@ -195,63 +98,50 @@ export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
     const leftSidebarOffset = isSidebarActive ? '278px' : '16px';
     switch (positionSetting) {
       case 'bottom-left':
-        return { ...baseStyle, bottom: '20px', left: leftSidebarOffset };
+        return { bottom: '20px', left: leftSidebarOffset };
       case 'top-right':
-        return { ...baseStyle, top: '116px', right: '20px' };
+        return { top: '116px', right: '20px' };
       case 'bottom-right':
-        return { ...baseStyle, bottom: '20px', right: '20px' };
+        return { bottom: '20px', right: '20px' };
       case 'top-left':
       default:
-        return { ...baseStyle, top: '116px', left: leftSidebarOffset };
+        return { top: '116px', left: leftSidebarOffset };
     }
   };
 
   return (
-    <div ref={panelRef} style={getPanelStyle()}>
+    <div
+      ref={panelRef}
+      className={`draggable-panel${isDragging ? ' dragging' : ''}`}
+      style={{
+        ...getPanelStyle(),
+        padding: '8px 14px',
+        width: '228px',
+        minWidth: '228px'
+      }}
+    >
       {/* Draggable Header */}
       <div
-        onPointerDown={handlePointerDown}
+        className="draggable-panel-header"
+        onPointerDown={(e) => handlePointerDown(e, () => {
+          if (onUpdatePositionSetting) {
+            onUpdatePositionSetting('custom');
+          }
+        })}
         onDoubleClick={handleResetPosition}
         title="마우스로 드래그하여 자유롭게 이동 (더블 클릭: 기본 위치로 복원)"
-        style={{
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '12.5px',
-          fontWeight: 'bold',
-          color: '#333',
-          cursor: isDragging ? 'grabbing' : 'grab',
-          userSelect: 'none',
-          touchAction: 'none',
-          paddingBottom: '5px',
-          marginBottom: '4px',
-          borderBottom: '1px solid rgba(0,0,0,0.08)'
-        }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div className="draggable-panel-header-left">
           <GripHorizontal size={14} style={{ color: '#777', flexShrink: 0 }} />
           <span>통계 ({session.name})</span>
         </div>
 
-        <div
-          className="no-drag"
-          style={{ display: 'flex', alignItems: 'center', gap: '2px' }}
-        >
+        <div className="draggable-panel-header-right no-drag">
           {/* Position Presets */}
           <div className="stats-pos-menu-container" style={{ position: 'relative' }}>
             <button
+              className={`draggable-panel-icon-btn${showPosMenu ? ' active' : ''}`}
               onClick={() => setShowPosMenu(prev => !prev)}
-              style={{
-                background: showPosMenu ? 'rgba(0,0,0,0.1)' : 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '3px',
-                borderRadius: '3px',
-                color: '#555',
-                display: 'flex',
-                alignItems: 'center'
-              }}
               title="위치 프리셋 (모서리 빠른 이동)"
               aria-label="Position Presets"
             >
@@ -259,33 +149,8 @@ export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
             </button>
 
             {showPosMenu && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: '4px',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #dcdcdc',
-                  borderRadius: '6px',
-                  boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
-                  zIndex: 120,
-                  minWidth: '135px',
-                  padding: '4px 0',
-                  fontSize: '12px',
-                  fontWeight: 'normal',
-                  color: '#222'
-                }}
-              >
-                <div
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '10.5px',
-                    color: '#888',
-                    borderBottom: '1px solid #f0f0f0',
-                    fontWeight: 'bold'
-                  }}
-                >
+              <div className="draggable-panel-pos-menu">
+                <div className="draggable-panel-pos-menu-header">
                   위치 프리셋
                 </div>
                 {[
@@ -296,39 +161,16 @@ export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
                 ].map(item => (
                   <button
                     key={item.id}
+                    className={`draggable-panel-pos-menu-item${positionSetting === item.id ? ' active' : ''}`}
                     onClick={() => handleApplyPreset(item.id)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '5px 10px',
-                      background: positionSetting === item.id ? '#f0f4ff' : 'none',
-                      color: positionSetting === item.id ? '#0000ee' : '#333',
-                      fontWeight: positionSetting === item.id ? 'bold' : 'normal',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '11.5px'
-                    }}
                   >
                     {item.label}
                   </button>
                 ))}
-                <div style={{ borderTop: '1px solid #f0f0f0', margin: '3px 0' }} />
+                <div className="draggable-panel-pos-menu-divider" />
                 <button
+                  className="draggable-panel-pos-menu-btn"
                   onClick={handleResetPosition}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '5px 10px',
-                    background: 'none',
-                    color: '#666',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '11.5px'
-                  }}
                 >
                   <RotateCcw size={11} />
                   위치 초기화
@@ -339,17 +181,8 @@ export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
 
           {/* Open full StatsModal */}
           <button
+            className="draggable-panel-icon-btn"
             onClick={onOpenStatsModal}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '3px',
-              borderRadius: '3px',
-              color: '#555',
-              display: 'flex',
-              alignItems: 'center'
-            }}
             title="상세 통계 창 열기"
             aria-label="Open detailed statistics"
           >
@@ -358,17 +191,8 @@ export const StatsFloatingView: React.FC<StatsFloatingViewProps> = ({
 
           {/* Close Panel */}
           <button
+            className="draggable-panel-icon-btn"
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '3px',
-              borderRadius: '3px',
-              color: '#555',
-              display: 'flex',
-              alignItems: 'center'
-            }}
             title="통계 패널 닫기"
             aria-label="Close statistics panel"
           >

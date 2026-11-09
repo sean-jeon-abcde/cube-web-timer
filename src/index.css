@@ -645,3 +645,144 @@ html, body {
     bestScoreFadeIn 0.35s ease forwards,
     bestScoreFadeOut 3s ease forwards;
 }
+
+/* Draggable Floating Panel — shared styles */
+.draggable-panel {
+  position: fixed;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.draggable-panel.dragging {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  opacity: 0.93;
+  user-select: none;
+  transition: none;
+}
+
+.draggable-panel-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: bold;
+  color: #333;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  padding-bottom: 5px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.draggable-panel-header:active {
+  cursor: grabbing;
+}
+
+.draggable-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.draggable-panel-header-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.draggable-panel-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 3px;
+  color: #555;
+  display: flex;
+  align-items: center;
+}
+
+.draggable-panel-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.draggable-panel-icon-btn.active {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.draggable-panel-pos-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  z-index: 120;
+  min-width: 135px;
+  padding: 4px 0;
+  font-size: 12px;
+  font-weight: normal;
+  color: #222;
+}
+
+.draggable-panel-pos-menu-header {
+  padding: 4px 10px;
+  font-size: 10.5px;
+  color: #888;
+  border-bottom: 1px solid #f0f0f0;
+  font-weight: bold;
+}
+
+.draggable-panel-pos-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 10px;
+  background: none;
+  color: #333;
+  border: none;
+  cursor: pointer;
+  font-size: 11.5px;
+}
+
+.draggable-panel-pos-menu-item:hover {
+  background-color: #f3f4f6;
+}
+
+.draggable-panel-pos-menu-item.active {
+  background-color: #f0f4ff;
+  color: #0000ee;
+  font-weight: bold;
+}
+
+.draggable-panel-pos-menu-divider {
+  border-top: 1px solid #f0f0f0;
+  margin: 3px 0;
+}
+
+.draggable-panel-pos-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  padding: 5px 10px;
+  background: none;
+  color: #666;
+  border: none;
+  cursor: pointer;
+  font-size: 11.5px;
+}
+
+.draggable-panel-pos-menu-btn:hover {
+  background-color: #f3f4f6;
+}

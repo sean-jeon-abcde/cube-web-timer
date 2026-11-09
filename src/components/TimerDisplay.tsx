@@ -41,6 +41,8 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
   const inspectionSecondsRef = useRef<number>(15);
   const spacePressedRef = useRef<boolean>(false);
   const stateRef = useRef<TimerState>('IDLE');
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   stateRef.current = timerState;
 
@@ -78,9 +80,9 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       setInspectionCountdown(remaining);
       inspectionSecondsRef.current = remaining;
 
-      if (elapsedSec === 8 && settings.voiceAlert) {
+      if (elapsedSec === 8 && settingsRef.current.voiceAlert) {
         sounds.playInspectionAlert(8);
-      } else if (elapsedSec === 12 && settings.voiceAlert) {
+      } else if (elapsedSec === 12 && settingsRef.current.voiceAlert) {
         sounds.playInspectionAlert(12);
       }
 
@@ -91,7 +93,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
         onSolveComplete(0, 'DNF');
       }
     }, 200);
-  }, [settings.voiceAlert, onSolveComplete]);
+  }, [onSolveComplete]);
 
   const clearInspection = useCallback(() => {
     if (inspectionIntervalRef.current) {
@@ -109,15 +111,15 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
 
   const startSolve = useCallback((penalty: 'NONE' | '+2' | 'DNF' = 'NONE') => {
     clearInspection();
-    if (settings.hideWhenTiming) {
+    if (settingsRef.current.hideWhenTiming) {
       setHideAllElements(true);
     }
     startTimeRef.current = performance.now();
     setTimerState('RUNNING');
     animFrameRef.current = requestAnimationFrame(runTimerLoop);
-  }, [clearInspection, runTimerLoop, settings.hideWhenTiming, setHideAllElements]);
+  }, [clearInspection, runTimerLoop, setHideAllElements]);
 
-  // Key event listeners
+  // Key event listeners — stable, no re-registration on settings change
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if user is typing in an input or modal is open
@@ -137,7 +139,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
         }
 
         if (stateRef.current === 'IDLE') {
-          if (settings.inspection) {
+          if (settingsRef.current.inspection) {
             // Start inspection
             startInspection();
           } else {
@@ -146,7 +148,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
             holdTimeoutRef.current = setTimeout(() => {
               setTimerState('READY');
               sounds.playReadyBeep();
-            }, settings.holdTimeMs);
+            }, settingsRef.current.holdTimeMs);
           }
         } else if (stateRef.current === 'INSPECTING') {
           // In inspection, hold space to get ready to solve
@@ -154,7 +156,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
           holdTimeoutRef.current = setTimeout(() => {
             setTimerState('READY');
             sounds.playReadyBeep();
-          }, settings.holdTimeMs);
+          }, settingsRef.current.holdTimeMs);
         }
       } else {
         // Any key stops the timer if running
@@ -182,7 +184,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
 
         if (stateRef.current === 'READY') {
           let penalty: 'NONE' | '+2' | 'DNF' = 'NONE';
-          if (settings.inspection) {
+          if (settingsRef.current.inspection) {
             const rem = inspectionSecondsRef.current;
             if (rem <= 0 && rem > -2) {
               penalty = '+2';
@@ -191,7 +193,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
           startSolve(penalty);
         } else if (stateRef.current === 'HOLDING') {
           // Released too early
-          if (settings.inspection && inspectionIntervalRef.current) {
+          if (settingsRef.current.inspection && inspectionIntervalRef.current) {
             setTimerState('INSPECTING');
           } else {
             setTimerState('IDLE');
@@ -210,7 +212,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       if (inspectionIntervalRef.current) clearInterval(inspectionIntervalRef.current);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [settings, startInspection, startSolve, stopTimer]);
+  }, [startInspection, startSolve, stopTimer]);
 
   // Pointer / Touch support for clicking directly on timer area
   const handlePointerDown = () => {
@@ -223,7 +225,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       holdTimeoutRef.current = setTimeout(() => {
         setTimerState('READY');
         sounds.playReadyBeep();
-      }, settings.holdTimeMs);
+      }, settingsRef.current.holdTimeMs);
     }
   };
 

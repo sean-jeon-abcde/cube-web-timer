@@ -1,19 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  Session,
-  Solve,
-  TimerSettings,
-  Penalty
-} from './types';
-import {
-  loadSessions,
-  saveSessions,
-  loadCurrentSessionId,
-  saveCurrentSessionId,
-  loadSettings,
-  saveSettings
-} from './utils/storage';
-import { calcSessionStats, getEffectiveTime } from './utils/statistics';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Session, Solve, Penalty } from './types';
 import { getScramble } from './utils/scramble';
 import { HeaderBar } from './components/HeaderBar';
 import { LeftBar } from './components/LeftBar';
@@ -27,240 +13,123 @@ import { StatsModal } from './components/Modals/StatsModal';
 import { ToolsModal } from './components/Modals/ToolsModal';
 import { SolveDetailModal } from './components/Modals/SolveDetailModal';
 import { SessionManagerModal } from './components/Modals/SessionManagerModal';
+import { useSessionManager } from './hooks/useSessionManager';
+import { useSettings } from './hooks/useSettings';
+import { useScramble } from './hooks/useScramble';
+import { useModals } from './hooks/useModals';
 
 // Initial scramble generator
 const INITIAL_SCRAMBLE = getScramble('333');
 
 export const App: React.FC = () => {
-  const [sessions, setSessions] = useState<Session[]>(() => loadSessions());
-  const [currentSessionId, setCurrentSessionId] = useState<string>(() => loadCurrentSessionId());
-  const [settings, setSettings] = useState<TimerSettings>(() => loadSettings());
+  // Custom hooks for separated concerns
+  const {
+    sessions,
+    setSessions,
+    currentSessionId,
+    setCurrentSessionId,
+    currentSession,
+    stats,
+    lastSolve,
+    diffMs,
+    handleSolveComplete: handleSolveCompleteBase,
+    handleUpdateSolve: handleUpdateSolveBase,
+    handleDeleteSolve: handleDeleteSolveBase,
+    handleClearSession,
+    handleClearSessionSolves,
+    handleClearAllSessions,
+    handleSwitchSessionByNumber,
+  } = useSessionManager();
 
-  // Scramble navigation history
-  const [scrambleHistory, setScrambleHistory] = useState<string[]>([INITIAL_SCRAMBLE]);
-  const [scrambleIndex, setScrambleIndex] = useState<number>(0);
+  const { settings, setSettings } = useSettings();
+
+  const {
+    scrambleHistory,
+    setScrambleHistory,
+    scrambleIndex,
+    setScrambleIndex,
+    currentScramble,
+    handleNextScramble,
+    handlePrevScramble,
+    handleEventChange,
+  } = useScramble(currentSession.scrambleType);
+
+  // Initialize scramble history with initial scramble if empty
+  useEffect(() => {
+    if (scrambleHistory.length === 0) {
+      setScrambleHistory([INITIAL_SCRAMBLE]);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const {
+    showSettings,
+    setShowSettings,
+    showExport,
+    setShowExport,
+    showStats,
+    setShowStats,
+    showTools,
+    setShowTools,
+    showSessionManager,
+    setShowSessionManager,
+    selectedSolve,
+    setSelectedSolve,
+    selectedStatName,
+    setSelectedStatName,
+    showBestScore,
+    setShowBestScore,
+    triggerBestScore,
+  } = useModals(currentSession, sessions);
 
   // Active view toggles
   const [isVisualizerActive, setIsVisualizerActive] = useState<boolean>(true);
   const [isSidebarActive, setIsSidebarActive] = useState<boolean>(true);
   const [isStatsActive, setIsStatsActive] = useState<boolean>(() => {
-    const saved = localStorage.getItem('incubetimer_show_floating_stats');
+    const saved = localStorage.getItem('baseballtimer_show_floating_stats');
     return saved !== null ? saved === 'true' : true;
   });
   const [hideAllElements, setHideAllElements] = useState<boolean>(false);
 
-  // Modals
-  const [showSettings, setShowSettings] = useState<boolean>(false);
-  const [showExport, setShowExport] = useState<boolean>(false);
-  const [showStats, setShowStats] = useState<boolean>(false);
-  const [showTools, setShowTools] = useState<boolean>(false);
-  const [showSessionManager, setShowSessionManager] = useState<boolean>(false);
-  const [selectedSolve, setSelectedSolve] = useState<Solve | null>(null);
-  const [selectedStatName, setSelectedStatName] = useState<string | undefined>(undefined);
-
-  // Current session object
-  const currentSession = useMemo(() => {
-    return sessions.find(s => s.id === currentSessionId) || sessions[0];
-  }, [sessions, currentSessionId]);
-
-  // Current session stats
-  const stats = useMemo(() => {
-    return calcSessionStats(currentSession.solves, currentSession.bestStats);
-  }, [currentSession.solves, currentSession.bestStats]);
-
-  // Current scramble text
-  const currentScramble = scrambleHistory[scrambleIndex] || INITIAL_SCRAMBLE;
-
-  // Last solve information
-  const lastSolve = useMemo(() => {
-    if (currentSession.solves.length === 0) return null;
-    return currentSession.solves[currentSession.solves.length - 1];
-  }, [currentSession.solves]);
-
-  // Diff ms vs previous solve
-  const diffMs = useMemo(() => {
-    if (currentSession.solves.length < 2) return null;
-    const curr = currentSession.solves[currentSession.solves.length - 1];
-    const prev = currentSession.solves[currentSession.solves.length - 2];
-    const currTime = getEffectiveTime(curr);
-    const prevTime = getEffectiveTime(prev);
-    if (!isFinite(currTime) || !isFinite(prevTime)) return null;
-    return currTime - prevTime;
-  }, [currentSession.solves]);
-
-  // Persist sessions
-  useEffect(() => {
-    saveSessions(sessions);
-  }, [sessions]);
-
-  // Persist current session ID
-  useEffect(() => {
-    saveCurrentSessionId(currentSessionId);
-  }, [currentSessionId]);
-
-  // Persist settings
-  useEffect(() => {
-    saveSettings(settings);
-  }, [settings]);
-
-  // Next / Prev Scramble handlers
-  const handleNextScramble = useCallback(() => {
-    const nextScrambleText = getScramble(currentSession.scrambleType);
-    setScrambleHistory(prev => {
-      const trimmed = prev.slice(0, scrambleIndex + 1);
-      return [...trimmed, nextScrambleText];
-    });
-    setScrambleIndex(prev => prev + 1);
-  }, [currentSession.scrambleType, scrambleIndex]);
-
-  const handlePrevScramble = useCallback(() => {
-    if (scrambleIndex > 0) {
-      setScrambleIndex(prev => prev - 1);
-    }
-  }, [scrambleIndex]);
-
-  const handleEventChange = useCallback((eventId: string) => {
-    setSessions(prev =>
-      prev.map(s => (s.id === currentSessionId ? { ...s, scrambleType: eventId } : s))
-    );
-    const newScr = getScramble(eventId);
-    setScrambleHistory(prev => [...prev, newScr]);
-    setScrambleIndex(prev => prev + 1);
-  }, [currentSessionId]);
-
-  // Best Score banner state
-  const [showBestScore, setShowBestScore] = useState<boolean>(false);
-  const bestScoreTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Solve completed
+  // Solve completed — wraps base handler with best score check and scramble
   const handleSolveComplete = useCallback((timeMs: number, penalty: Penalty) => {
-    const newSolveIndex = currentSession.solves.length + 1;
-    const newSolve: Solve = {
-      id: `solve-${newSolveIndex}-${Date.now()}`,
-      index: newSolveIndex,
-      time: timeMs,
-      penalty,
-      scramble: currentScramble,
-      date: Date.now()
-    };
-
     // Check if it's a new personal best single (only for non-DNF solves)
     if (penalty !== 'DNF') {
       const effectiveTime = penalty === '+2' ? timeMs + 2000 : timeMs;
       const currentBest = stats.single.best;
       if (currentBest === null || effectiveTime < currentBest) {
-        setShowBestScore(true);
-        if (bestScoreTimerRef.current) clearTimeout(bestScoreTimerRef.current);
-        bestScoreTimerRef.current = setTimeout(() => {
-          setShowBestScore(false);
-        }, 3000);
+        triggerBestScore();
       }
     }
 
-    setSessions(prev =>
-      prev.map(s => {
-        if (s.id === currentSession.id) {
-          return {
-            ...s,
-            solves: [...s.solves, newSolve]
-          };
-        }
-        return s;
-      })
-    );
-
-    // Auto generate next scramble
+    handleSolveCompleteBase(timeMs, penalty, currentScramble);
     handleNextScramble();
-  }, [currentSession.id, currentSession.solves.length, currentScramble, handleNextScramble, stats.single.best]);
+  }, [stats.single.best, triggerBestScore, handleSolveCompleteBase, currentScramble, handleNextScramble]);
 
-  // Update a single solve
+  // Update a single solve — wraps base handler with modal update
   const handleUpdateSolve = useCallback((updated: Solve) => {
-    setSessions(prev =>
-      prev.map(s => {
-        if (s.id === currentSession.id) {
-          return {
-            ...s,
-            solves: s.solves.map(sol => (sol.id === updated.id ? updated : sol))
-          };
-        }
-        return s;
-      })
-    );
+    handleUpdateSolveBase(updated);
     setSelectedSolve(updated);
-  }, [currentSession.id]);
+  }, [handleUpdateSolveBase]);
 
-  // Delete a single solve
+  // Delete a single solve — wraps base handler with modal cleanup
   const handleDeleteSolve = useCallback((solveId: string) => {
-    setSessions(prev =>
-      prev.map(s => {
-        if (s.id === currentSession.id) {
-          const filtered = s.solves.filter(sol => sol.id !== solveId);
-          // Re-index remaining solves
-          const reIndexed = filtered.map((sol, idx) => ({ ...sol, index: idx + 1 }));
-          return {
-            ...s,
-            solves: reIndexed
-          };
-        }
-        return s;
-      })
-    );
+    handleDeleteSolveBase(solveId);
     setSelectedSolve(null);
-  }, [currentSession.id]);
+  }, [handleDeleteSolveBase]);
 
-  // Clear current session
-  const handleClearSession = useCallback(() => {
-    if (window.confirm(`모둠 '${currentSession.name}'의 모든 솔브 기록을 초기화하시겠습니까?`)) {
-      setSessions(prev =>
-        prev.map(s => (s.id === currentSession.id ? { ...s, solves: [], bestStats: undefined } : s))
-      );
-    }
-  }, [currentSession.id, currentSession.name]);
+  // Refs to access latest values without re-registering listeners
+  const currentSessionRef = useRef(currentSession);
+  currentSessionRef.current = currentSession;
+  const handleDeleteSolveRef = useRef(handleDeleteSolve);
+  handleDeleteSolveRef.current = handleDeleteSolve;
+  const handleUpdateSolveRef = useRef(handleUpdateSolve);
+  handleUpdateSolveRef.current = handleUpdateSolve;
+  const handlePrevScrambleRef = useRef(handlePrevScramble);
+  handlePrevScrambleRef.current = handlePrevScramble;
+  const handleNextScrambleRef = useRef(handleNextScramble);
+  handleNextScrambleRef.current = handleNextScramble;
 
-  // Clear solves of a specific session
-  const handleClearSessionSolves = useCallback((id: string) => {
-    const targetSession = sessions.find(s => s.id === id);
-    const sessionName = targetSession ? targetSession.name : id;
-    if (window.confirm(`모둠 '${sessionName}'의 모든 솔브 기록을 초기화하시겠습니까?`)) {
-      setSessions(prev =>
-        prev.map(s => (s.id === id ? { ...s, solves: [], bestStats: undefined } : s))
-      );
-    }
-  }, [sessions]);
-
-  // Clear all sessions' solves
-  const handleClearAllSessions = useCallback(() => {
-    if (window.confirm('모든 모둠의 솔브 기록을 전부 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-      setSessions(prev =>
-        prev.map(s => ({
-          ...s,
-          solves: [],
-          bestStats: undefined
-        }))
-      );
-    }
-  }, []);
-
-  // Switch session by number
-  const handleSwitchSessionByNumber = useCallback((num: number) => {
-    const existing = sessions.find(s => s.name === String(num));
-    if (existing) {
-      setCurrentSessionId(existing.id);
-    } else {
-      // Create new session with this number
-      const newSess: Session = {
-        id: `session-${Date.now()}`,
-        name: String(num),
-        solves: [],
-        scrambleType: currentSession.scrambleType,
-        scrambleCategory: 'WCA'
-      };
-      setSessions(prev => [...prev, newSess]);
-      setCurrentSessionId(newSess.id);
-    }
-  }, [sessions, currentSession.scrambleType]);
-
-  // Global Keyboard Shortcuts
+  // Global Keyboard Shortcuts — stable listener, no re-registration on solves change
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -268,40 +137,42 @@ export const App: React.FC = () => {
         return;
       }
 
+      const session = currentSessionRef.current;
+
       // Alt + z: Delete last solve
       if (e.altKey && e.code === 'KeyZ') {
         e.preventDefault();
-        if (currentSession.solves.length > 0) {
-          const last = currentSession.solves[currentSession.solves.length - 1];
-          handleDeleteSolve(last.id);
+        if (session.solves.length > 0) {
+          const last = session.solves[session.solves.length - 1];
+          handleDeleteSolveRef.current(last.id);
         }
       }
 
       // Ctrl + 1/2/3: Mark last solve OK/+2/DNF
       if (e.ctrlKey && (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3')) {
         e.preventDefault();
-        if (currentSession.solves.length > 0) {
-          const last = currentSession.solves[currentSession.solves.length - 1];
+        if (session.solves.length > 0) {
+          const last = session.solves[session.solves.length - 1];
           const penalty: Penalty =
             e.code === 'Digit1' ? 'NONE' : e.code === 'Digit2' ? '+2' : 'DNF';
-          handleUpdateSolve({ ...last, penalty });
+          handleUpdateSolveRef.current({ ...last, penalty });
         }
       }
 
       // Alt + Left / Right: Prev / Next scramble
       if (e.altKey && e.code === 'ArrowLeft') {
         e.preventDefault();
-        handlePrevScramble();
+        handlePrevScrambleRef.current();
       }
       if (e.altKey && e.code === 'ArrowRight') {
         e.preventDefault();
-        handleNextScramble();
+        handleNextScrambleRef.current();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSession.solves, handleDeleteSolve, handleUpdateSolve, handlePrevScramble, handleNextScramble]);
+  }, []);
 
   return (
     <div className="app-container">
@@ -326,7 +197,7 @@ export const App: React.FC = () => {
               onToggleStats={() => {
                 setIsStatsActive(prev => {
                   const next = !prev;
-                  localStorage.setItem('incubetimer_show_floating_stats', String(next));
+                  localStorage.setItem('baseballtimer_show_floating_stats', String(next));
                   return next;
                 });
               }}
@@ -398,7 +269,7 @@ export const App: React.FC = () => {
             stats={stats}
             onClose={() => {
               setIsStatsActive(false);
-              localStorage.setItem('incubetimer_show_floating_stats', 'false');
+              localStorage.setItem('baseballtimer_show_floating_stats', 'false');
             }}
             onStatClick={(statName) => {
               setSelectedStatName(statName);
